@@ -1,14 +1,14 @@
-<ul>
-  {% for item in menu_items %}
-    <li>
-      <a href="{{ item.item.get_absolute_url }}" class="{% if item.item.active %}active{% endif %}">
-        {{ item.item.name }}
-      </a>
-      {% if item.children %}
-        <ul>
-          {% include "menu.html" with menu_items=item.children %}
-        </ul>
-      {% endif %}
-    </li>
-  {% endfor %}
+<ul class="menu">
+    {% for node in menu_items %}
+        <li class="{% if node.item.active %}active{% endif %}">
+            <a href="{{ node.item.get_absolute_url }}">{{ node.item.name }}</a>
+            {% if node.expanded %}
+                <ul>
+                    {% for child in node.children %}
+                        {% include 'menu_item.html' with node=child %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </li>
+    {% endfor %}
 </ul>

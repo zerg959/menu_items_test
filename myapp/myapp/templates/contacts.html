@@ -6,4 +6,6 @@
   {% load menu_tags %}
   {% draw_menu 'main_menu' as main_menu %}
   {% include "menu.html" with menu_items=main_menu.menu_items %}
+  {% draw_menu 'projects_menu' as projects_menu %}
+  {% include "menu.html" with menu_items=projects_menu.menu_items %}
 {% endblock %}

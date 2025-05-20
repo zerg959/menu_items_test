@@ -8,45 +8,43 @@ register = template.Library()
 def draw_menu(context, menu_name):
     request = context['request']
     current_path = request.path
-
-    # Получаем все элементы меню с заданным именем
     menu_items = MenuItem.objects.filter(menu_name=menu_name).prefetch_related('children')
+    menu_dict = {item.id: item for item in menu_items}
 
-    # Создаем дерево
-    root_items = [item for item in menu_items if item.parent is None]
+    def build_tree(item_id, parent_id=None):
+        children = []
+        for item in menu_items:
+            if item.parent_id == item_id:
+                children.append(build_tree(item.id, item.id))
 
-    # Определяем активные элементы
-    def mark_active(item):
-        item.active = item.is_active(current_path)
-        for child in item.children.all():
+        item_data = {
+            'item': menu_dict.get(item_id),
+            'children': children
+        }
+        return item_data
+
+    root_items = [item for item in menu_items if item.parent_id is None]
+    tree = [build_tree(item.id) for item in root_items]
+
+    # Помечаем активные элементы
+    def mark_active(node):
+        node['item'].active = node['item'].is_active(current_path)
+        for child in node['children']:
             mark_active(child)
-        return item
 
-    # Строим дерево с активными элементами
-    def build_tree(items):
-        result = []
-        for item in items:
-            marked_item = mark_active(item)
-            children = build_tree(item.children.all())
-            result.append({
-                'item': marked_item,
-                'children': children
-            })
-        return result
+    for node in tree:
+        mark_active(node)
 
-    tree = build_tree(root_items)
 
-    # Разворачиваем родителей, если их дети активны
+    # Развертываем меню
     def expand_parents(node):
         node['expanded'] = node['item'].active
         for child in node['children']:
             expand_parents(child)
             if child['expanded']:
                 node['expanded'] = True
-        return node
 
-    expanded_tree = [expand_parents(item) for item in tree]
+    for node in tree:
+        expand_parents(node)
 
-    return {
-        'menu_items': expanded_tree
-    }
+    return {'menu_items': tree}
